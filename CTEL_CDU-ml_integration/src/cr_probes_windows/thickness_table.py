@@ -1,127 +1,455 @@
 import os
-from PyQt6 import QtCore
+from PyQt6 import QtCore, QtWidgets
+
 from src.server_manager.operation_manager import DatabaseManager
 from src.utils.year_month_table_combined.tab_table_combined import TabTableWidget
-from src.utils.core_utility_functions import get_present_month_year, extract_column_names, get_yesterday_date, resource_path
+from src.utils.core_utility_functions import (
+    get_present_month_year,
+    extract_column_names,
+    get_yesterday_date,
+    resource_path,
+)
 
 from src.utils.table_columns import TABLE_COLUMNS
 
+import logging
+
+logger = logging.getLogger("SentinelApp")
+
+
 class UTThicknessTable(TabTableWidget):
 
-    def __init__(self, current_id= "00001", parent=None):
-        super().__init__(parent)
+    def __init__(self, current_id="00001", parent=None):
+
+        # ---------------------------------------------------------
+        # Basic information
+        # ---------------------------------------------------------
         self.parent = parent
+        self.probe_id = str(current_id)
 
-        self.probe_id = current_id
+        # ---------------------------------------------------------
+        # Stores UI-only Flag messages.
+        #
+        # Example:
+        #
+        # {
+        #     "27/11/2025":
+        #         "27/11/2025 data was missing, so we have taken..."
+        # }
+        # ---------------------------------------------------------
+        self.flag_messages = {}
 
-        # Stores Flag messages for prediction dates.
-        # Key   = prediction date
-        # Value = Flag message
-        self.flag_messages = {}  ###me
-
+        # ---------------------------------------------------------
+        # Database
+        # ---------------------------------------------------------
         self.db_manager = DatabaseManager()
         self.db_name = "SentinelDB"
-        
-        # self.yesterday_date = get_yesterday_date()
 
+        # ---------------------------------------------------------
+        # Table columns
+        # ---------------------------------------------------------
         self.db_columns = TABLE_COLUMNS.get("ut_thickness")
 
-        self.column_names = extract_column_names(self.db_columns)
+        self.column_names = extract_column_names(
+            self.db_columns
+        )
 
         # UI-only column
-        self.column_names.append("Flag")  ### me
+        self.column_names.append("Flag")
 
+        # ---------------------------------------------------------
+        # Current month/year
+        # ---------------------------------------------------------
         self.curr_month, self.curr_year = get_present_month_year()
-        self.short_month_names = self.combined_ui.months_short_names
 
-        data = self.set_up(year=self.curr_year, month=self.curr_month)
-        
+        # ---------------------------------------------------------
+        # Load initial table data
+        # ---------------------------------------------------------
+        data = self.set_up(
+            year=self.curr_year,
+            month=self.curr_month
+        )
 
-        super().__init__(parent=parent, column_names=self.column_names, data=data, frozen_columns=1)
-        # self.combined_ui.min_column_width = 200
+        # ---------------------------------------------------------
+        # Initialize parent ONCE
+        # ---------------------------------------------------------
+        super().__init__(
+            parent=parent,
+            column_names=self.column_names,
+            data=data,
+            frozen_columns=1
+        )
+
+        # ---------------------------------------------------------
+        # Month names
+        # ---------------------------------------------------------
+        self.short_month_names = (
+            self.combined_ui.months_short_names
+        )
+
+        # ---------------------------------------------------------
+        # Build UI
+        # ---------------------------------------------------------
         self.combined_ui.setupUi(self)
 
-        self.year_combo_box = self.combined_ui.year_combo_box
-        self.year_combo_box.currentIndexChanged.connect(self.year_changed)
+        # ---------------------------------------------------------
+        # Year selector
+        # ---------------------------------------------------------
+        self.year_combo_box = (
+            self.combined_ui.year_combo_box
+        )
 
-        self.month_tab = self.combined_ui.tabBar
-        self.month_tab.tabChanged.connect(self.month_changed)
+        self.year_combo_box.currentIndexChanged.connect(
+            self.year_changed
+        )
 
-        self.month_tab.setCurrentIndex(self.short_month_names.index(self.curr_month))
+        # ---------------------------------------------------------
+        # Month selector
+        # ---------------------------------------------------------
+        self.month_tab = (
+            self.combined_ui.tabBar
+        )
 
-        self.refresh_button = self.combined_ui.refresh_button
-        self.refresh_button.clicked.connect(self.refresh_table)
+        self.month_tab.tabChanged.connect(
+            self.month_changed
+        )
 
-        self.combined_ui.pagination_widget.deleteLater()
+        self.month_tab.setCurrentIndex(
+            self.short_month_names.index(
+                self.curr_month
+            )
+        )
 
+        # ---------------------------------------------------------
+        # Refresh button
+        # ---------------------------------------------------------
+        self.refresh_button = (
+            self.combined_ui.refresh_button
+        )
+
+        self.refresh_button.clicked.connect(
+            self.refresh_table
+        )
+
+        # ---------------------------------------------------------
+        # Pagination is not required for this table
+        # ---------------------------------------------------------
+        if self.combined_ui.pagination_widget is not None:
+
+            self.combined_ui.pagination_widget.deleteLater()
+
+            self.combined_ui.pagination_widget = None
+
+        # ---------------------------------------------------------
+        # Get the current model
+        # ---------------------------------------------------------
         self.define_model()
 
-        # self.table_data = self.get_row_value()
+        # =========================================================
+        # FLAG RESTORATION
+        #
+        # Prediction may have completed BEFORE this thickness
+        # table was opened.
+        #
+        # main_interface.py stores flagged dates on QApplication
+        # using:
+        #
+        #     "sentinel_flagged_dates"
+        #
+        # Retrieve those dates and apply them now.
+        # =========================================================
 
-    def set_up(self, year, month): # month in short format
+        application = QtWidgets.QApplication.instance()
 
-        self.table_name = f"ut_{self.probe_id}_{year}_{month}_thickness"
-        data = self.db_manager.read_table(self.db_name, self.table_name)
+        if application is not None:
+
+            stored_flags = application.property(
+                "sentinel_flagged_dates"
+            )
+
+            if stored_flags is not None:
+
+                probe_flags = stored_flags.get(
+                    self.probe_id,
+                    []
+                )
+
+                if probe_flags:
+
+                    logger.info(
+                        "[FLAG DEBUG] Restoring stored flags "
+                        "for probe=%s: %s",
+                        self.probe_id,
+                        probe_flags
+                    )
+
+                    self.set_flag_messages(
+                        probe_flags
+                    )
+
+    # =========================================================
+    # DATABASE
+    # =========================================================
+
+    def set_up(self, year, month):
+
+        self.table_name = (
+            f"ut_{self.probe_id}_{year}_{month}_thickness"
+        )
+
+        data = self.db_manager.read_table(
+            self.db_name,
+            self.table_name
+        )
 
         return data
 
+    # =========================================================
+    # MODEL
+    # =========================================================
+
     def define_model(self):
-        self.model = self.combined_ui.table_widget._model
-        # self.edit_deligate = self.combined_ui.table_widget._edit_delegate
-        # self.edit_deligate.editing_started.connect(self._on_edit_started)
-        # self.edit_deligate.editing_finished.connect(self._on_edit_finished)
 
-    def set_flag_message(self, prediction_date, missing_dates): ###me
+        self.model = (
+            self.combined_ui.table_widget._model
+        )
+
+    # =========================================================
+    # FLAG HANDLING
+    # =========================================================
+
+    def set_flag_message(
+        self,
+        prediction_date,
+        missing_dates
+    ):
         """
-        Set the Flag message for a prediction date.
+        Store and display a Flag message for one prediction date.
 
-        Parameters
-        ----------
-        prediction_date : str
-            The date for which the model was asked to predict.
+        prediction_date:
+            Date for which prediction was requested.
 
-        missing_dates : list[str]
-            Dates for which missing data was handled by the
-            existing missing-data logic.
+        missing_dates:
+            Dates for which missing input data was detected.
+
+        The worker has already determined whether the date
+        should be flagged.
+
+        This function only stores the message and updates
+        the UI.
         """
 
-        prediction_date = str(prediction_date)
+        prediction_date = str(
+            prediction_date
+        ).strip()
 
-        # No missing data = no Flag
-        if not missing_dates:
-            self.flag_messages.pop(prediction_date, None)
-            self._refresh_flag_column()
+        logger.info(
+            "[FLAG DEBUG] set_flag_message called | "
+            "probe=%s | prediction_date=%s | "
+            "missing_dates=%s",
+            self.probe_id,
+            prediction_date,
+            missing_dates
+        )
+
+        # ---------------------------------------------------------
+        # Normalize missing dates
+        # ---------------------------------------------------------
+        normalized_missing_dates = {
+            str(date).strip()
+            for date in (missing_dates or [])
+        }
+
+        # ---------------------------------------------------------
+        # Only create the flag if the prediction date is included
+        # in the missing dates supplied by the worker.
+        # ---------------------------------------------------------
+        if prediction_date not in normalized_missing_dates:
+
+            logger.info(
+                "[FLAG DEBUG] Date %s is not in missing_dates. "
+                "No flag created.",
+                prediction_date
+            )
+
             return
-        # Create the Flag message using the prediction date.
+
+        # ---------------------------------------------------------
+        # Create Flag message
+        # ---------------------------------------------------------
         message = (
             f"{prediction_date} data was missing, "
             f"so we have taken the average of the last 30 days "
             f"dataset to fill the gap and help the model predict."
         )
 
-         # Store message against the PREDICTION DATE.
-        self.flag_messages[prediction_date] = message
+        # ---------------------------------------------------------
+        # Store message
+        # ---------------------------------------------------------
+        self.flag_messages[
+            prediction_date
+        ] = message
 
-        # Update the visible table.
+        logger.info(
+            "[FLAG DEBUG] Stored flag | "
+            "probe=%s | date=%s | message=%s",
+            self.probe_id,
+            prediction_date,
+            message
+        )
+
+        # ---------------------------------------------------------
+        # Immediately update visible table
+        # ---------------------------------------------------------
         self._refresh_flag_column()
 
+    # =========================================================
 
-    def _refresh_flag_column(self): ###me
+    def set_flag_messages(self, missing_dates):
         """
-        Update only the Flag column of the current table.
+        Store and display Flag messages for multiple dates.
 
-        This does not modify the database.
-        This does not modify any prediction data.
+        Example:
+
+            [
+                "27/11/2025",
+                "28/11/2025"
+            ]
+
+        This is the method used by main_interface.py after
+        prediction completes.
         """
 
-        if not hasattr(self, "model"):
+        if not missing_dates:
+
+            logger.info(
+                "[FLAG DEBUG] set_flag_messages called "
+                "with no dates."
+            )
+
             return
 
-        flag_column = self.model.columnCount() - 1
+        logger.info(
+            "[FLAG DEBUG] set_flag_messages | "
+            "probe=%s | dates=%s",
+            self.probe_id,
+            missing_dates
+        )
 
-        for row in range(self.model.rowCount()):
-            # Date is the first column.
-            date_index = self.model.index(row, 0)
+        # ---------------------------------------------------------
+        # Store all messages
+        # ---------------------------------------------------------
+        for prediction_date in missing_dates:
+
+            prediction_date = str(
+                prediction_date
+            ).strip()
+
+            if not prediction_date:
+                continue
+
+            message = (
+                f"{prediction_date} data was missing, "
+                f"so we have taken the average of the last 30 days "
+                f"dataset to fill the gap and help the model predict."
+            )
+
+            self.flag_messages[
+                prediction_date
+            ] = message
+
+            logger.info(
+                "[FLAG DEBUG] Stored flag | "
+                "probe=%s | date=%s",
+                self.probe_id,
+                prediction_date
+            )
+
+        # ---------------------------------------------------------
+        # Update UI once after all messages are stored
+        # ---------------------------------------------------------
+        self._refresh_flag_column()
+
+    # =========================================================
+
+    def _refresh_flag_column(self):
+        """
+        Apply all stored Flag messages to the currently
+        displayed table.
+
+        This modifies ONLY the Qt table model.
+
+        It does NOT modify the database.
+        """
+
+        # ---------------------------------------------------------
+        # Make sure model exists
+        # ---------------------------------------------------------
+        if not hasattr(
+            self,
+            "model"
+        ) or self.model is None:
+
+            logger.warning(
+                "[FLAG DEBUG] Cannot refresh Flag column: "
+                "model is not available."
+            )
+
+            return
+
+        row_count = self.model.rowCount()
+        column_count = self.model.columnCount()
+
+        # ---------------------------------------------------------
+        # Make sure table has rows
+        # ---------------------------------------------------------
+        if row_count == 0:
+
+            logger.info(
+                "[FLAG DEBUG] No rows available "
+                "for Flag update."
+            )
+
+            return
+
+        # ---------------------------------------------------------
+        # Make sure table has columns
+        # ---------------------------------------------------------
+        if column_count == 0:
+
+            logger.warning(
+                "[FLAG DEBUG] Table has no columns."
+            )
+
+            return
+
+        # ---------------------------------------------------------
+        # Flag is always the final UI-only column.
+        # ---------------------------------------------------------
+        flag_column = column_count - 1
+
+        logger.info(
+            "[FLAG DEBUG] Refreshing Flag column | "
+            "probe=%s | rows=%s | flag_column=%s | "
+            "stored_flags=%s",
+            self.probe_id,
+            row_count,
+            flag_column,
+            self.flag_messages
+        )
+
+        # ---------------------------------------------------------
+        # Process every row
+        # ---------------------------------------------------------
+        for row in range(row_count):
+
+            # -----------------------------------------------------
+            # Date is the first column
+            # -----------------------------------------------------
+            date_index = self.model.index(
+                row,
+                0
+            )
 
             date_value = self.model.data(
                 date_index,
@@ -131,103 +459,224 @@ class UTThicknessTable(TabTableWidget):
             if date_value is None:
                 continue
 
-            date_value = str(date_value)
+            date_value = str(
+                date_value
+            ).strip()
 
-            flag_index = self.model.index(
-                row,
-                flag_column
-            )
-
+            # -----------------------------------------------------
+            # Find stored Flag message for this date
+            # -----------------------------------------------------
             message = self.flag_messages.get(
                 date_value,
                 ""
             )
 
-            self.model.setData(
+            # -----------------------------------------------------
+            # Flag cell
+            # -----------------------------------------------------
+            flag_index = self.model.index(
+                row,
+                flag_column
+            )
+
+            # -----------------------------------------------------
+            # Write message into model
+            # -----------------------------------------------------
+            success = self.model.setData(
                 flag_index,
                 message,
                 QtCore.Qt.ItemDataRole.EditRole
             )
 
+            logger.info(
+                "[FLAG DEBUG] row=%s | date=%s | "
+                "message=%r | setData_success=%s",
+                row,
+                date_value,
+                message,
+                success
+            )
+
+    # =========================================================
+    # YEAR / MONTH
+    # =========================================================
 
     def year_changed(self):
-        year = int(self.year_combo_box.currentText())
+
+        year = int(
+            self.year_combo_box.currentText()
+        )
 
         if year == self.curr_year:
-            self.month_tab.setCurrentIndex(self.short_month_names.index(self.curr_month))
+
+            self.month_tab.setCurrentIndex(
+                self.short_month_names.index(
+                    self.curr_month
+                )
+            )
+
         else:
-            self.month_tab.setCurrentIndex(0)
 
-        self.month_changed()  # to refresh the table with new year and month
-        print (f"Year Changed to {year}")
-        # month = self.month_tab.currentText()
+            self.month_tab.setCurrentIndex(
+                0
+            )
 
-        # data = self.set_up(year=year, month=month)
-        
-        # # remove the last widget from self.main_vlayout
-        # self.combined_ui.main_vlayout.removeWidget(self.combined_ui.table_widget)
-        # self.combined_ui.table_widget.deleteLater()
-        
-        # # Add the crude blend table
-        #self.combined_ui.table_widget = self.combined_ui.create_frozen_table(column_names=self.column_names, data=data, frozen_columns=1) 
-        #self.combined_ui.main_vlayout.addWidget(self.combined_ui.table_widget)
-        #self.combined_ui.main_vlayout.insertWidget(1,self.combined_ui.table_widget)
-        
-        #self.define_model()
-
-        # Restore any existing Flag messages
-        # for dates belonging to this month.
-        #self._refresh_flag_column() ##me
-        #print(f"Month changed to {month} of year {year}") ##me
-
-        #self.month_changed()  # to refresh the table with new year and month
-        #print(f"Year changed to {year}")
-
-    def month_changed(self):
-        year = int(self.year_combo_box.currentText())
-        month = self.month_tab.currentText()
-        self.table_name = f"{month}_thickness"
-        
-        data = self.set_up(year=year, month=month)
-
-        # remove the last widget from self.main_vlayout
-        self.combined_ui.main_vlayout.removeWidget(self.combined_ui.table_widget)
-        self.combined_ui.table_widget.deleteLater()
-        
-        # Add the crude blend table
-        self.combined_ui.table_widget = self.combined_ui.create_frozen_table(column_names=self.column_names, data=data, frozen_columns=1)
-        # insert the table widget at index 1 (after the year combo box and month tabs)
-        self.combined_ui.main_vlayout.insertWidget(1, self.combined_ui.table_widget)
-        
-        self.define_model()
-
-        # Restore any existing Flag messages
-        # after the table/model is recreated.
-        self._refresh_flag_column()
-        
-        print(f"Month changed to {month} of year {year}")
-
-    def get_row_value(self) -> list[tuple]:
-        """Return all model rows as list of tuples."""
-        result = []
-        for r in range(self.model.rowCount()):
-            row = []
-            for c in range(self.model.columnCount()):
-                index = self.model.index(r, c)
-                row.append(self.model.data(index, QtCore.Qt.ItemDataRole.DisplayRole))
-            result.append(tuple(row))
-        return result
-    
-    def _on_edit_started(self, row, col):
-        self.start_editing = True
-        print(f"Editing STARTED at row {row}, col {col}")  # debug
-    
-    def _on_edit_finished(self, row, col):
-        self.start_editing = False
-        print(f"Editing ENDED at row {row}, col {col}")  # debug
-
-    
-    def refresh_table(self):
-        # same logic as month_changed
         self.month_changed()
 
+        logger.info(
+            "[FLAG DEBUG] Year changed | year=%s",
+            year
+        )
+
+    # =========================================================
+
+    def month_changed(self):
+
+        year = int(
+            self.year_combo_box.currentText()
+        )
+
+        month = self.month_tab.currentText()
+
+        # ---------------------------------------------------------
+        # Load database data
+        # ---------------------------------------------------------
+        data = self.set_up(
+            year=year,
+            month=month
+        )
+
+        # ---------------------------------------------------------
+        # Remove old table
+        # ---------------------------------------------------------
+        old_table = (
+            self.combined_ui.table_widget
+        )
+
+        self.combined_ui.main_vlayout.removeWidget(
+            old_table
+        )
+
+        old_table.deleteLater()
+
+        # ---------------------------------------------------------
+        # Create NEW table
+        #
+        # FastTableModel automatically pads every database row
+        # with "" for the UI-only Flag column.
+        # ---------------------------------------------------------
+        self.combined_ui.table_widget = (
+            self.combined_ui.create_frozen_table(
+                column_names=self.column_names,
+                data=data,
+                frozen_columns=1
+            )
+        )
+
+        # ---------------------------------------------------------
+        # Insert new table
+        # ---------------------------------------------------------
+        self.combined_ui.main_vlayout.insertWidget(
+            1,
+            self.combined_ui.table_widget
+        )
+
+        # ---------------------------------------------------------
+        # Point self.model to the NEW model
+        # ---------------------------------------------------------
+        self.define_model()
+
+        logger.info(
+            "[FLAG DEBUG] Month changed | "
+            "year=%s | month=%s | stored_flags=%s",
+            year,
+            month,
+            self.flag_messages
+        )
+
+        # ---------------------------------------------------------
+        # Reapply stored Flag messages to the new model
+        # ---------------------------------------------------------
+        self._refresh_flag_column()
+
+        logger.info(
+            "[FLAG DEBUG] Month refresh completed | "
+            "year=%s | month=%s",
+            year,
+            month
+        )
+
+    # =========================================================
+    # DATA
+    # =========================================================
+
+    def get_row_value(self) -> list[tuple]:
+        """
+        Return all model rows as a list of tuples.
+        """
+
+        result = []
+
+        for r in range(
+            self.model.rowCount()
+        ):
+
+            row = []
+
+            for c in range(
+                self.model.columnCount()
+            ):
+
+                index = self.model.index(
+                    r,
+                    c
+                )
+
+                row.append(
+                    self.model.data(
+                        index,
+                        QtCore.Qt.ItemDataRole.DisplayRole
+                    )
+                )
+
+            result.append(
+                tuple(row)
+            )
+
+        return result
+
+    # =========================================================
+    # EDITING
+    # =========================================================
+
+    def _on_edit_started(
+        self,
+        row,
+        col
+    ):
+
+        self.start_editing = True
+
+        print(
+            f"Editing STARTED at row {row}, col {col}"
+        )
+
+    def _on_edit_finished(
+        self,
+        row,
+        col
+    ):
+
+        self.start_editing = False
+
+        print(
+            f"Editing ENDED at row {row}, col {col}"
+        )
+
+    # =========================================================
+    # REFRESH
+    # =========================================================
+
+    def refresh_table(self):
+
+        self.month_changed()

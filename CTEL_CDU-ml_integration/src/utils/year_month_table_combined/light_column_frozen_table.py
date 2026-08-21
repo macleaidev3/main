@@ -7,11 +7,32 @@ from PyQt6.QtCore import QItemSelectionModel
 # Fast Editable Table Model
 # ================================================================
 class FastTableModel(QtCore.QAbstractTableModel):
+
     def __init__(self, data, columns, parent=None):
         super().__init__(parent)
-        # Convert to mutable structure
-        self._data = [list(row) for row in data]
         self._columns = list(columns)
+
+        # Convert rows to mutable lists and make sure every row
+        # has exactly the same number of elements as the columns.
+        self._data = [] ##me
+
+        for row in data:##me
+
+            row = list(row)##me
+
+
+            # Add empty values for UI-only columns such as "Flag".
+            while len(row) < len(self._columns):##me
+
+                row.append("")##me
+
+
+            # Prevent extra values from creating inconsistent rows.
+            row = row[:len(self._columns)]##me
+
+
+            self._data.append(row)##me
+
 
     # -----------------------------------------------------------
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -54,16 +75,23 @@ class FastTableModel(QtCore.QAbstractTableModel):
         if not index.isValid() or role != QtCore.Qt.ItemDataRole.EditRole:
             return False
 
-        row, col = index.row(), index.column()
+        row = index.row() 
+        col = index.column()
 
-        try:
-            self._data[row][col] = value
-        except Exception:
-            return False
-
-        self.dataChanged.emit(index, index, [role])
+        if row < 0 or row >= len(self._data): ##me
+            return False ##me
+        if col < 0 or col >= len(self._columns): ##me
+            return False ##me
+        if col >= len(self._data[row]):##me
+            return False##me
+        self._data[row][col] = value ##me
+        self.dataChanged.emit(
+            index,
+            index,
+            [QtCore.Qt.ItemDataRole.DisplayRole]
+        )
         return True
-
+        
     # -----------------------------------------------------------
     def flags(self, index):
         if not index.isValid():
@@ -91,7 +119,22 @@ class FastTableModel(QtCore.QAbstractTableModel):
     # -----------------------------------------------------------
     def update_all_data(self, new_data):
         self.beginResetModel()
-        self._data = [list(row) for row in new_data]
+        # self._data = [list(row) for row in new_data]
+        # self.endResetModel()
+        self._data = []
+
+        for row in new_data:
+            row = list(row)
+
+            # Ensure every row has one value for every column,
+            # including UI-only columns such as "Flag".
+            while len(row) < len(self._columns):
+                row.append("")
+
+            row = row[:len(self._columns)]
+
+            self._data.append(row)
+
         self.endResetModel()
 
     # -----------------------------------------------------------

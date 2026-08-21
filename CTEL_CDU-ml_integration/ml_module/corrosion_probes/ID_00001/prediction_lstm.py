@@ -6,6 +6,7 @@ import joblib
 import logging
 import warnings  # <--- Added to handle clutter
 from src.utils.core_utility_functions import resource_path
+import os
 
 # ==========================================
 # CLEAN LOGGING: Suppress harmless version warnings
@@ -55,8 +56,23 @@ class ID00001Model:
 
         # 2. Load Preprocessors
         try:
+            #self.pt_X = joblib.load(f"{self.artifact_dir}/pt_X.pkl") ##Sornarjit
+
+            print("==============================================")
+            print("ARTIFACT DIRECTORY:")
+            print(self.artifact_dir)
+
+            print("PT_X PATH:")
+            print(os.path.abspath(f"{self.artifact_dir}/pt_X.pkl"))
+
+            print("PT_X EXISTS:")
+            print(os.path.exists(f"{self.artifact_dir}/pt_X.pkl"))
+
+            print("==============================================")
+
             self.pt_X = joblib.load(f"{self.artifact_dir}/pt_X.pkl")
-            self.pt_y = joblib.load(f"{self.artifact_dir}/pt_y.pkl")
+
+            self.pt_y = joblib.load(f"{self.artifact_dir}/pt_y.pkl") ##Sornarjit
             self.feature_scaler = joblib.load(f"{self.artifact_dir}/feature_scaler.pkl")
             self.target_scaler = joblib.load(f"{self.artifact_dir}/target_scaler.pkl")
             

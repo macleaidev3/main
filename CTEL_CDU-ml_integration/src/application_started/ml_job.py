@@ -34,10 +34,15 @@ def worker_loop(task_q: Queue, result_q: Queue):
 
         try:
             logger.debug("[Worker] Processing job_id=%s, type=%s", job_id, job_type)
+
+            flagged_dates = {} ###me
+
             if job_type == "auto":
                 _run_automatic_job(dates)
+
             elif job_type == "manual":
-                _run_manual_job(instruments, dates)
+                # _run_manual_job(instruments, dates) ###Sunarjit
+                flagged_dates = _run_manual_job(instruments, dates) ###me
             else:
                 raise ValueError(f"Unknown job type: {job_type}")
 
@@ -46,6 +51,7 @@ def worker_loop(task_q: Queue, result_q: Queue):
                 "type": job_type,
                 "instruments": instruments,
                 "status": "success",
+                "flagged_dates": flagged_dates, ###me
             })
 
         except Exception as e:
@@ -142,16 +148,108 @@ def _run_manual_job(instruments, dates):
     """
     from src.crude_blend.updated_calculated_blend_properties import BlendPropertiesCalculation
     from src.utils.core_utility_functions import month_short_name
+    from src.server_manager.operation_manager import DatabaseManager ###me
+
+
+
     _contributor = None
     _calculator = None
     _blend_properties = BlendPropertiesCalculation()
+
+    db_manager = DatabaseManager() ###me
+    db_name = "SentinelDB" ###me
+
+    ## Stores dates for which prediction input data was missing.
+
+    flagged_dates = {} ###me
     
     logger.info("[Worker] Starting MANUAL job for instruments: %s", instruments)
+
+    def check_missing_prediction_data(instrument, date): ###me
+            """
+            Check whether any prediction input required by the UT thickness
+            model is missing for the selected prediction date.
+            """
+    
+            # These are the three inputs used by UTThicknessPrediction.
+            required_properties = [
+                "Density(g/ml)",
+                "API",
+                "Sulphur%"
+            ]
+    
+            day, month_i, year = map(int, date.split("/"))
+            month = month_short_name()[month_i - 1]
+    
+            contributor_table = (
+                f"ut_{instrument}_{year}_{month}_contributor"
+            )
+    
+            missing_properties = []
+    
+            for prop in required_properties:
+                try:
+                    value = db_manager.get_cell_value(
+                        db_name,
+                        contributor_table,
+                        prop,
+                        "Date",
+                        date
+                    )
+    
+                    if (
+                        value is None
+                        or (
+                            isinstance(value, str)
+                            and value.strip().lower() in {
+                                "",
+                                "nan",
+                                "none",
+                                "null",
+                                "na",
+                                "n/a",
+                            }
+                        )
+                        or (
+                            not isinstance(value, str)
+                            and value != value
+                        )
+                    ):
+                        missing_properties.append(prop)
+                        
+                except Exception:
+                    logger.exception(
+                        "[Worker] Failed to check prediction input '%s' "
+                        "for instrument %s on %s.",
+                        prop,
+                        instrument,
+                        date
+                    )
+    
+                    # Treat an unavailable value as missing.
+                    missing_properties.append(prop)
+    
+            if missing_properties:
+                logger.warning(
+                    "[Worker] Missing prediction data detected. "
+                    "Instrument: %s | Date: %s | Missing: %s",
+                    instrument,
+                    date,
+                    missing_properties
+                )
+    
+                return True
+    
+            return False
+
 
     for date in dates: # first compute blend properties for all dates
         _blend_properties.update_blend_properties(date)
     
     for instrument in instruments:
+        _contributor = None
+        _calculator = None
+        
         if instrument == "00001":
             from src.ut_ml.ID_00001.contributor_00001 import UTThicknessContributor00001
             from src.ut_ml.ID_00001.prediction_00001 import UTThicknessPrediction00001
@@ -216,6 +314,7 @@ def _run_manual_job(instruments, dates):
             from src.ml_instrument.ICE102.ice102_contributor import CRContributorICE102
             # from src.ml_instrument.ICE102.ice102_prediction import CRPredictionICE102
             _contributor = CRContributorICE102
+            _calculator = None ###me
 
         elif instrument == "IC-E-161 A~H":
             from src.ml_instrument.ICE161.ice161_contributor  import CRContributorICE161
@@ -271,18 +370,73 @@ def _run_manual_job(instruments, dates):
         for date in dates:
             logger.debug("[Worker] Executing MANUAL job component: Instrument %s | Date: %s", instrument, date)
             day, month_i, year = map(int, date.split("/"))
-            month = month_short_name()[month_i - 1]
-            
+            month = month_short_name()[month_i - 1]           
+
+            was_missing = False
+
+            # Check whether the prediction inputs for this date contain missing values.
+
+            if instrument in {   ###me
+                "00001",
+                "00003",
+                "00004",
+                "00005",
+                "00006",
+                "00029",
+                "00030",
+            }:
+                was_missing = check_missing_prediction_data(
+                    instrument,
+                    date
+                )
+
+                logger.info(
+                    "[Worker] Missing-data check | "
+                    "Instrument=%s | Date=%s | was_missing=%s",
+                    instrument,
+                    date,
+                    was_missing
+                )
+
             _contributor(
                 month=month,
                 year=year,
                 yesterday_date=date,
             )
-            _calculator(
-                month=month,
-                year=year,
-                yesterday_date=date,
-            )
+
+            if was_missing:
+                flagged_dates.setdefault(
+                    instrument,
+                    []
+                ).append(date)
+
+                logger.info(
+                    "[Worker] FLAGGED date %s for instrument %s "
+                    "because prediction input data was missing.",
+                    date,
+                    instrument
+                )
+
+            if _calculator is not None:
+                _calculator(
+                    month=month,
+                    year=year,
+                    yesterday_date=date,
+                )
+            else:
+                logger.warning(
+                    "[Worker] No prediction calculator configured for "
+                    "Instrument %s | Date %s",
+                    instrument,
+                    date
+                )
+
+    logger.info(
+        "[Worker] FINAL flagged_dates = %s",
+        flagged_dates
+    )
+
+    return flagged_dates ###me
 
 # ============================================================
 # Qt-side controller
