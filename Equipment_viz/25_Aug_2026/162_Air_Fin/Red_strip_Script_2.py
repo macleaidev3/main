@@ -7,8 +7,7 @@ import numpy as np
 # ============================================================
 
 stl_file = (
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works"
-    r"\3D visualization\All new\SSTL\STL file\stl_files\162.stl"
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\stl_files\162.stl"
 )
 
 
@@ -17,18 +16,27 @@ stl_file = (
 # ============================================================
 
 # Distance from nozzle opening toward equipment
+
 STRIP_DISTANCE = 0.04
 
+
 # Width/height of the red ring along nozzle axis
+
 STRIP_WIDTH = 0.06
 
+
 # Small outward offset so red ring sits just above STL surface
+
 RING_OFFSET = 0.003
 
+
 # Smoothness of the complete ring
+
 RING_RESOLUTION = 128
 
+
 # Boundary detection
+
 MIN_BOUNDARY_POINTS = 5
 
 
@@ -59,14 +67,6 @@ boundary_edges = mesh.extract_feature_edges(
     manifold_edges=False,
     non_manifold_edges=False
 )
-
-
-print("\n============================================================")
-print("BOUNDARY INFORMATION")
-print("============================================================")
-
-print("Boundary points :", boundary_edges.n_points)
-print("Boundary cells  :", boundary_edges.n_cells)
 
 
 if boundary_edges.n_points == 0:
@@ -327,6 +327,7 @@ for region_id in range(number_of_regions):
 # ============================================================
 
 print("\n")
+
 print("============================================================")
 print("RED RING SUMMARY")
 print("============================================================")
@@ -385,17 +386,6 @@ for red_ring in red_rings:
         diffuse=0.0,
         specular=0.0
     )
-
-
-# ============================================================
-# SHOW BOUNDARIES
-# ============================================================
-
-plotter.add_mesh(
-    boundary_edges,
-    color="yellow",
-    line_width=3
-)
 
 
 # ============================================================
