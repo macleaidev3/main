@@ -18,7 +18,7 @@ stl_file = (
 
 csv_files = [
 
-     r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-13\COnverted_Nozzle_1_Red_Strip.csv",
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-13\COnverted_Nozzle_1_Red_Strip.csv",
     
     r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-13\COnverted_Nozzle_2_Red_Strip.csv",
     
@@ -26,7 +26,6 @@ csv_files = [
     
     r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-13\COnverted_Nozzle_4_Red_Strip.csv"
 ]
-    
 
 
 # ============================================================
@@ -34,7 +33,7 @@ csv_files = [
 # ============================================================
 
 html_file = (
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-13\162_Predicted_Corrosion_Rate_dataset-13.html"
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-5\162_Predicted_Corrosion_Rate.html"
 )
 
 
@@ -218,6 +217,29 @@ print(
 
 
 # ============================================================
+# EXACT LEGEND RANGE
+#
+# These are the actual minimum and maximum values present
+# in all uploaded CSV datasets.
+# ============================================================
+
+corrosion_min = np.min(corrosion_rates)
+
+corrosion_max = np.max(corrosion_rates)
+
+
+print(
+    "Exact legend minimum:",
+    corrosion_min
+)
+
+print(
+    "Exact legend maximum:",
+    corrosion_max
+)
+
+
+# ============================================================
 # CREATE KD-TREE FOR EXACT CSV CORROSION COORDINATES
 # ============================================================
 
@@ -395,10 +417,13 @@ plotter.add_mesh(
     cmap="turbo",
 
     # ========================================================
-    # FIXED LEGEND / COLOR RANGE
+    # EXACT DYNAMIC LEGEND RANGE
     # ========================================================
 
-    clim=[0.0118, 0.0121],
+    clim=[
+        corrosion_min,
+        corrosion_max
+    ],
 
     show_edges=False,
 
@@ -416,7 +441,7 @@ plotter.add_mesh(
 
     scalar_bar_args={
 
-        "title": "Predicted Corrosion Rate",
+        "title": "Corrosion Rate",
 
         "vertical": True,
 
@@ -426,7 +451,15 @@ plotter.add_mesh(
 
         "height": 0.65,
 
-        "width": 0.10
+        "width": 0.10,
+
+        # ====================================================
+        # SHOW MORE PRECISE VALUES IN THE LEGEND
+        # ====================================================
+
+        "fmt": "%.17g",
+
+        "n_labels": 7
     }
 )
 
@@ -445,7 +478,7 @@ plotter.add_mesh(
 
 plotter.add_text(
 
-    "162 STL - Predicted Corrosion Rate",
+    "162 STL - Corrosion Rate",
 
     position="upper_left",
 
@@ -480,5 +513,5 @@ print(
 
 plotter.show(
 
-    title="162 STL - Predicted Corrosion Rate"
+    title="162 STL -Corrosion Rate"
 )

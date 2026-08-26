@@ -1,6 +1,7 @@
 import pyvista as pv
 import pandas as pd
 import numpy as np
+from scipy.spatial import cKDTree
 
 
 # ============================================================
@@ -17,24 +18,16 @@ stl_file = (
 # ============================================================
 
 csv_files = [
-
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-5\COnverted_Nozzle_1_Red_Strip.csv",
-    
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-5\COnverted_Nozzle_2_Red_Strip.csv",
-    
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-5\COnverted_Nozzle_3_Red_Strip.csv",
-    
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-5\COnverted_Nozzle_4_Red_Strip.csv"
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\STL_162_coordinates.csv"
 ]
 
 
 # ============================================================
-# HTML OUTPUT FILE
+# FIXED CORROSION COLOR RANGE
 # ============================================================
 
-html_file = (
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-5\162_Predicted_Corrosion_Rate.html"
-)
+COLOR_MIN = 0.0118
+COLOR_MAX = 0.0121
 
 
 # ============================================================
@@ -54,7 +47,7 @@ print("Bounds :", mesh.bounds)
 
 
 # ============================================================
-# LOAD ALL FOUR CSV FILES
+# LOAD CORROSION CSV FILES
 # ============================================================
 
 all_data = []
@@ -77,7 +70,7 @@ for csv_file in csv_files:
 
 
     # --------------------------------------------------------
-    # Check required columns
+    # REQUIRED COLUMNS
     # --------------------------------------------------------
 
     required_columns = [
@@ -98,7 +91,7 @@ for csv_file in csv_files:
 
 
     # --------------------------------------------------------
-    # Keep ONLY the required columns
+    # KEEP ONLY REQUIRED COLUMNS
     # --------------------------------------------------------
 
     df = df[
@@ -112,14 +105,14 @@ for csv_file in csv_files:
 
 
     # --------------------------------------------------------
-    # Add to combined dataset
+    # ADD DATASET
     # --------------------------------------------------------
 
     all_data.append(df)
 
 
 # ============================================================
-# COMBINE ALL FOUR FILES
+# COMBINE ALL CSV DATA
 # ============================================================
 
 corrosion_df = pd.concat(
@@ -138,7 +131,7 @@ print(
 
 
 # ============================================================
-# REMOVE ONLY INVALID NUMERIC ROWS
+# CONVERT VALUES TO NUMERIC
 # ============================================================
 
 corrosion_df[
@@ -160,6 +153,11 @@ corrosion_df[
     errors="coerce"
 )
 
+
+# ============================================================
+# REMOVE INVALID ROWS
+# ============================================================
+
 corrosion_df = corrosion_df.dropna(
     subset=[
         "X",
@@ -171,7 +169,21 @@ corrosion_df = corrosion_df.dropna(
 
 
 # ============================================================
-# EXTRACT EXACT CSV COORDINATES
+# EXTRACT ORIGINAL CSV COORDINATES
+# ============================================================
+#
+# IMPORTANT:
+#
+# These coordinates remain exactly as supplied by the CSV.
+#
+# They are NOT:
+#
+# - scaled
+# - shifted
+# - rotated
+# - interpolated
+# - modified
+#
 # ============================================================
 
 coordinates = corrosion_df[
@@ -193,7 +205,7 @@ corrosion_rates = corrosion_df[
 
 
 # ============================================================
-# DISPLAY INFORMATION
+# DISPLAY CORROSION INFORMATION
 # ============================================================
 
 print("\n============================================================")
@@ -206,63 +218,69 @@ print(
 )
 
 print(
-    "Minimum corrosion rate:",
+    "Minimum corrosion rate in CSV:",
     np.min(corrosion_rates)
 )
 
 print(
-    "Maximum corrosion rate:",
+    "Maximum corrosion rate in CSV:",
     np.max(corrosion_rates)
 )
 
-
-# ============================================================
-# EXACT LEGEND RANGE
-#
-# These are the actual minimum and maximum values present
-# in all uploaded CSV datasets.
-# ============================================================
-
-corrosion_min = np.min(corrosion_rates)
-
-corrosion_max = np.max(corrosion_rates)
-
-
 print(
-    "Exact legend minimum:",
-    corrosion_min
+    "Visualization minimum:",
+    COLOR_MIN
 )
 
 print(
-    "Exact legend maximum:",
-    corrosion_max
+    "Visualization maximum:",
+    COLOR_MAX
 )
 
 
 # ============================================================
-# CREATE KD-TREE FOR EXACT CSV CORROSION COORDINATES
+# CREATE KD-TREE
 # ============================================================
 
-from scipy.spatial import cKDTree
+corrosion_tree = cKDTree(
+    coordinates
+)
 
-corrosion_tree = cKDTree(coordinates)
+
+# ============================================================
+# GET STL SURFACE
+# ============================================================
+
+print("\n============================================================")
+print("CREATING CONTINUOUS SURFACE STRIP")
+print("============================================================")
+
+surface_mesh = (
+    mesh
+    .extract_surface()
+    .triangulate()
+)
 
 
 # ============================================================
 # GET STL SURFACE CELL CENTERS
 # ============================================================
 
-print("\n============================================================")
-print("CREATING CONTINUOUS SURFACE STRIPS")
-print("============================================================")
+cell_centers = (
+    surface_mesh
+    .cell_centers()
+    .points
+)
 
-surface_mesh = mesh.extract_surface().triangulate()
 
-cell_centers = surface_mesh.cell_centers().points
+print(
+    "Number of STL surface cells:",
+    len(cell_centers)
+)
 
 
 # ============================================================
-# ESTIMATE A SUITABLE STRIP WIDTH
+# ESTIMATE CSV POINT SPACING
 # ============================================================
 
 if len(coordinates) > 1:
@@ -281,11 +299,11 @@ else:
     median_spacing = 1.0
 
 
-# ------------------------------------------------------------
-# Strip width multiplier
-# ------------------------------------------------------------
+# ============================================================
+# STRIP WIDTH
+# ============================================================
 
-STRIP_WIDTH_FACTOR = 1.5
+STRIP_WIDTH_FACTOR = 1.0
 
 strip_width = (
     median_spacing *
@@ -305,7 +323,7 @@ print(
 
 
 # ============================================================
-# FIND STL SURFACE CELLS CLOSE TO CORROSION COORDINATES
+# FIND STL CELLS CLOSE TO CORROSION COORDINATES
 # ============================================================
 
 distances, nearest_indices = corrosion_tree.query(
@@ -315,10 +333,12 @@ distances, nearest_indices = corrosion_tree.query(
 
 
 # ============================================================
-# SELECT ONLY THE SURFACE CELLS BELONGING TO THE STRIP
+# SELECT CORROSION STRIP CELLS
 # ============================================================
 
-strip_mask = distances <= strip_width
+strip_mask = (
+    distances <= strip_width
+)
 
 
 strip_cell_indices = np.where(
@@ -333,31 +353,77 @@ print(
 
 
 # ============================================================
-# EXTRACT CONTINUOUS STL SURFACE STRIP
+# EXTRACT CORROSION STRIP
 # ============================================================
 
-corrosion_strip = surface_mesh.extract_cells(
-    strip_cell_indices
-).extract_surface().triangulate()
+corrosion_strip = (
+    surface_mesh
+    .extract_cells(strip_cell_indices)
+    .extract_surface()
+    .triangulate()
+)
+
+
+print(
+    "Corrosion strip points:",
+    corrosion_strip.n_points
+)
+
+print(
+    "Corrosion strip cells:",
+    corrosion_strip.n_cells
+)
 
 
 # ============================================================
-# CALCULATE CORROSION RATE FOR EACH STRIP CELL
+# ============================================================
+# IMPORTANT:
+# CALCULATE CORROSION RATE AT STL POINTS
+# ============================================================
+#
+# Previously we calculated the corrosion value at CELL CENTERS.
+#
+# That produced:
+#
+#       Triangle 1 = one colour
+#       Triangle 2 = another colour
+#       Triangle 3 = another colour
+#
+# which can look blocky.
+#
+# NOW:
+#
+# We calculate the corrosion value at every STL POINT.
+#
+# PyVista will then interpolate the colours smoothly across
+# every triangle.
+#
+# ============================================================
 # ============================================================
 
-strip_cell_centers = (
+strip_points = (
     corrosion_strip
-    .cell_centers()
     .points
 )
 
-_, nearest_csv_indices = corrosion_tree.query(
-    strip_cell_centers,
-    k=1
+
+# ============================================================
+# FIND NEAREST ORIGINAL CSV POINT FOR EVERY STL POINT
+# ============================================================
+
+point_distances, nearest_csv_indices = (
+    corrosion_tree.query(
+        strip_points,
+        k=1
+    )
 )
 
 
-strip_corrosion_rates = (
+# ============================================================
+# GET CORROSION VALUE FOR EVERY STL POINT
+# ============================================================
+
+point_corrosion_rates = (
     corrosion_rates[
         nearest_csv_indices
     ]
@@ -365,12 +431,21 @@ strip_corrosion_rates = (
 
 
 # ============================================================
-# ATTACH CORROSION RATE TO THE STRIP
+# ATTACH CORROSION RATE AS POINT DATA
+# ============================================================
+#
+# IMPORTANT:
+#
+# This is POINT DATA, not CELL DATA.
+#
+# PyVista can therefore interpolate the colour smoothly between
+# neighboring surface vertices.
+#
 # ============================================================
 
-corrosion_strip[
+corrosion_strip.point_data[
     "Predicted_Corrosion_Rate"
-] = strip_corrosion_rates
+] = point_corrosion_rates
 
 
 # ============================================================
@@ -405,7 +480,7 @@ plotter.add_mesh(
 
 
 # ============================================================
-# DISPLAY CONTINUOUS CORROSION STRIP
+# DISPLAY SMOOTH CORROSION STRIP
 # ============================================================
 
 plotter.add_mesh(
@@ -414,16 +489,35 @@ plotter.add_mesh(
 
     scalars="Predicted_Corrosion_Rate",
 
+    # --------------------------------------------------------
+    # TURBO COLOUR MAP
+    # --------------------------------------------------------
+
     cmap="turbo",
 
-    # ========================================================
-    # EXACT DYNAMIC LEGEND RANGE
-    # ========================================================
+    # --------------------------------------------------------
+    # FIXED COLOR RANGE
+    # --------------------------------------------------------
 
     clim=[
-        corrosion_min,
-        corrosion_max
+        COLOR_MIN,
+        COLOR_MAX
     ],
+
+    # --------------------------------------------------------
+    # POINT DATA
+    # --------------------------------------------------------
+    #
+    # Because Predicted_Corrosion_Rate is POINT DATA, PyVista
+    # interpolates the colour between neighboring points.
+    #
+    # --------------------------------------------------------
+
+    preference="point",
+
+    # --------------------------------------------------------
+    # SURFACE
+    # --------------------------------------------------------
 
     show_edges=False,
 
@@ -437,11 +531,15 @@ plotter.add_mesh(
 
     specular=0.20,
 
+    # --------------------------------------------------------
+    # SCALAR BAR
+    # --------------------------------------------------------
+
     show_scalar_bar=True,
 
     scalar_bar_args={
 
-        "title": "Corrosion Rate",
+        "title": "Predicted Corrosion Rate",
 
         "vertical": True,
 
@@ -453,11 +551,11 @@ plotter.add_mesh(
 
         "width": 0.10,
 
-        # ====================================================
-        # SHOW MORE PRECISE VALUES IN THE LEGEND
-        # ====================================================
+        "fmt": "%.4f",
 
-        "fmt": "%.17g",
+        "title_font_size": 16,
+
+        "label_font_size": 12,
 
         "n_labels": 7
     }
@@ -465,11 +563,12 @@ plotter.add_mesh(
 
 
 # ============================================================
-# NO AXES / NO GRID
+# AXES
 # ============================================================
 
-# No plotter.add_axes()
-# No plotter.show_grid()
+plotter.add_axes()
+
+plotter.show_grid()
 
 
 # ============================================================
@@ -478,32 +577,11 @@ plotter.add_mesh(
 
 plotter.add_text(
 
-    "162 STL - Corrosion Rate",
+    "162 STL - Predicted Corrosion Rate",
 
     position="upper_left",
 
     font_size=14
-)
-
-
-# ============================================================
-# SAVE INTERACTIVE VISUALIZATION AS HTML
-# ============================================================
-
-print("\n============================================================")
-print("SAVING INTERACTIVE HTML")
-print("============================================================")
-
-plotter.export_html(
-    html_file
-)
-
-print(
-    "\nHTML visualization saved successfully:"
-)
-
-print(
-    html_file
 )
 
 
@@ -513,5 +591,5 @@ print(
 
 plotter.show(
 
-    title="162 STL -Corrosion Rate"
+    title="162 STL - Predicted Corrosion Rate"
 )
