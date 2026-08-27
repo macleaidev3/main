@@ -18,11 +18,11 @@ stl_file = (
 
 csv_files = [
 
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-9\COnverted_Nozzle_1_Red_Strip.csv",
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\COnverted_Nozzle_1_Red_Strip.csv",
     
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-9\COnverted_Nozzle_2_Red_Strip.csv",
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\COnverted_Nozzle_2_Red_Strip.csv",
     
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-9\COnverted_Nozzle_3_Red_Strip.csv",
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\COnverted_Nozzle_3_Red_Strip.csv",
     
     #r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\162_Air_Fin\162_dataset-5\COnverted_Nozzle_4_Red_Strip.csv"
 ]
@@ -33,7 +33,7 @@ csv_files = [
 # ============================================================
 
 html_file = (
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-9\161to112_Predicted_Corrosion_Rate.html"
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\161to112_Predicted_Corrosion_Rate.html"
 )
 
 

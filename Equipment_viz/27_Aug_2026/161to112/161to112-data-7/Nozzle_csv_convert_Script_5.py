@@ -15,14 +15,14 @@ stl_file = (
 # ============================================================
 
 red_strip_csv = (
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-9\Nozzle_3_Red_Strip.csv")
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\Nozzle_3_Red_Strip.csv")
 
 # ============================================================
 # OUTPUT CSV FILE
 # ============================================================
 
 output_csv = (
-r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-9\COnverted_Nozzle_3_Red_Strip.csv")
+r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\COnverted_Nozzle_3_Red_Strip.csv")
 
 # ============================================================
 # LOAD STL

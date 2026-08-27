@@ -6,7 +6,7 @@ import os
 # STL FILE
 # ============================================================
 
-stl_file = r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\stl_files\112.stl"
+stl_file = r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\stl_files\161_112.stl"
 
 # ============================================================
 # OUTPUT CSV FILE

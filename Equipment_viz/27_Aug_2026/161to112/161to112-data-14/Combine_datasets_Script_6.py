@@ -19,7 +19,7 @@ red_strip_files = [
 
 # ICV prediction file
 icv_file = (
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-1\161_to_112P_1.2.xlsx_report.csv"
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-14\161_to_112P14.2.xlsx_report.csv"
 )
 
 

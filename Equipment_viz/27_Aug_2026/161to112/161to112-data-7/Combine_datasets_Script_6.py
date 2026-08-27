@@ -7,11 +7,11 @@ import os
 # ============================================================
 
 red_strip_files = [
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-9\COnverted_Nozzle_1_Red_Strip.csv",
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\COnverted_Nozzle_1_Red_Strip.csv",
 
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-9\COnverted_Nozzle_2_Red_Strip.csv",
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\COnverted_Nozzle_2_Red_Strip.csv",
 
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-9\COnverted_Nozzle_3_Red_Strip.csv",
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\COnverted_Nozzle_3_Red_Strip.csv",
 
     #r""
 ]
@@ -19,7 +19,7 @@ red_strip_files = [
 
 # ICV prediction file
 icv_file = (
-    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-1\161_to_112P_1.2.xlsx_report.csv"
+    r"D:\Anurag BPCL WORK\All BPCL Machine Learning Related works\3D visualization\All new\SSTL\STL file\161to112\161to112-data-7\161_to_112P_7.2.xlsx_report.csv"
 )
 
 
