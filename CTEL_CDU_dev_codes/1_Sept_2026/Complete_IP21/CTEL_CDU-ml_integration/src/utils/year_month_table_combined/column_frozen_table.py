@@ -1,3 +1,5 @@
+#### Created By ANURAG of IP21
+
 import sys
 from PyQt6 import QtWidgets, QtCore, QtGui
 from PyQt6.QtCore import QItemSelectionModel
@@ -331,6 +333,16 @@ class FrozenTable(QtWidgets.QWidget):
 
                 # Center alignment for all cells
                 item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+                # Display Flag messages in red
+                if (                                        ###me 
+                    col < len(self.column_names)            ###me
+                    and self.column_names[col] == "Flag"    ###me
+                    and val is not None                     ###me
+                    and str(val).strip() != ""              ###me
+                    and str(val).strip().lower() != "none"  ###me
+                ):
+                    item.setForeground(QtGui.QBrush(QtCore.Qt.GlobalColor.red)) ###me
 
                 items.append(item)
 
