@@ -1,0 +1,28 @@
+{
+    "preprocessed_file": "preprocessed_data.pkl",
+    "features": [
+        "x-coordinate",
+        "y-coordinate",
+        "z-coordinate",
+        "r",
+        "theta",
+        "phi",
+        "Velocity shell",
+        "Crude temperature",
+        "CW temp",
+        "Velocity CW",
+        "MW",
+        "k",
+        "Density",
+        "Cp",
+        "mu(Pa-s)",
+        "Sulfur (%)",
+        "H+(%)"
+    ],
+    "target": "total-temperature",
+    "eps": 1e-06,
+    "n_train_samples": 517000,
+    "n_unseen_samples": 55000,
+    "n_train_simulations": 47,
+    "n_unseen_simulations": 5
+}
