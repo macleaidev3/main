@@ -25,12 +25,42 @@ class IP21RecoveryResult:
 class IP21RecoveryManager:
     """
     Handles IP21 reading, historical preparation, target-date
-    creation and missing-value recovery.
+    creation, missing-value recovery and persistence of recovered
+    target-date values back into the IP21 database.
 
-    The recovery strategy remains based on the existing
-    MissingDataHandler, which performs the 720 consecutive-hour
-    / 30-day recovery.
+    IMPORTANT
+    ---------
+    The existing IP21 recovery technique is NOT changed.
+
+    Missing IP21 values are still recovered using the existing
+    MissingDataHandler and its 720 consecutive-hour / 30-day
+    recovery logic.
+
+    The additional functionality in this class is:
+
+        1. Create missing target-date hourly rows in memory.
+        2. Recover their missing process values.
+        3. SAVE the recovered target-date rows into the actual
+           IP21 database table.
+        4. Verify that the recovered rows can be read back from
+           the database.
+
+    Existing valid IP21 values are preserved.
+
+    Only the target date is synchronized back to the database.
+    Historical values used for calculating the averages are not
+    written back as recovered values.
     """
+
+    # ============================================================
+    # CONFIGURATION
+    # ============================================================
+
+    DB_NAME = "SentinelDB"
+
+    # ============================================================
+    # INITIALIZATION
+    # ============================================================
 
     def __init__(
         self,
@@ -82,9 +112,14 @@ class IP21RecoveryManager:
         columns = self.get_ip21_columns()
 
         if self.flags_column not in columns:
-            columns.append(self.flags_column)
 
-        return pd.DataFrame(columns=columns)
+            columns.append(
+                self.flags_column
+            )
+
+        return pd.DataFrame(
+            columns=columns
+        )
 
     # ============================================================
     # TIMESTAMP
@@ -96,7 +131,10 @@ class IP21RecoveryManager:
         timestamp = pd.Timestamp(timestamp)
 
         if timestamp.tzinfo is not None:
-            timestamp = timestamp.tz_localize(None)
+
+            timestamp = timestamp.tz_localize(
+                None
+            )
 
         return timestamp.replace(
             minute=0,
@@ -108,9 +146,14 @@ class IP21RecoveryManager:
     # READ ONE DAY
     # ============================================================
 
-    def _read_ip21_day(self, date_value):
+    def _read_ip21_day(
+        self,
+        date_value,
+    ):
 
-        date_string = date_value.strftime("%d/%m/%Y")
+        date_string = date_value.strftime(
+            "%d/%m/%Y"
+        )
 
         logger.debug(
             "[IP21] Reading source data for %s.",
@@ -138,9 +181,13 @@ class IP21RecoveryManager:
             return self.create_empty_dataframe()
 
         if day_data is None:
+
             return self.create_empty_dataframe()
 
-        if isinstance(day_data, pd.DataFrame):
+        if isinstance(
+            day_data,
+            pd.DataFrame,
+        ):
 
             dataframe = day_data.copy()
 
@@ -148,7 +195,9 @@ class IP21RecoveryManager:
 
             try:
 
-                dataframe = pd.DataFrame(day_data)
+                dataframe = pd.DataFrame(
+                    day_data
+                )
 
             except Exception:
 
@@ -161,6 +210,7 @@ class IP21RecoveryManager:
                 return self.create_empty_dataframe()
 
         if dataframe.empty:
+
             return self.create_empty_dataframe()
 
         return dataframe
@@ -169,11 +219,16 @@ class IP21RecoveryManager:
     # HISTORICAL DATA
     # ============================================================
 
-    def get_historical_data(self, target_datetime):
+    def get_historical_data(
+        self,
+        target_datetime,
+    ):
 
         start_datetime = (
             target_datetime
-            - timedelta(days=self.historical_fetch_days)
+            - timedelta(
+                days=self.historical_fetch_days
+            )
         ).replace(
             hour=0,
             minute=0,
@@ -196,15 +251,21 @@ class IP21RecoveryManager:
         all_frames = []
 
         current_date = start_datetime
+
         days_requested = 0
         days_with_data = 0
 
-        while current_date.date() <= target_datetime.date():
+        while (
+            current_date.date()
+            <= target_datetime.date()
+        ):
 
             days_requested += 1
 
-            day_dataframe = self._read_ip21_day(
-                current_date
+            day_dataframe = (
+                self._read_ip21_day(
+                    current_date
+                )
             )
 
             if (
@@ -212,14 +273,20 @@ class IP21RecoveryManager:
                 and not day_dataframe.empty
             ):
 
-                all_frames.append(day_dataframe)
+                all_frames.append(
+                    day_dataframe
+                )
+
                 days_with_data += 1
 
-            current_date += timedelta(days=1)
+            current_date += timedelta(
+                days=1
+            )
 
         logger.info(
             "[IP21] Historical read completed | "
-            "Days requested=%d | Days containing data=%d",
+            "Days requested=%d | "
+            "Days containing data=%d",
             days_requested,
             days_with_data,
         )
@@ -245,34 +312,56 @@ class IP21RecoveryManager:
                 f"'{self.time_column}'."
             )
 
-        dataframe[self.time_column] = pd.to_datetime(
-            dataframe[self.time_column],
+        dataframe[
+            self.time_column
+        ] = pd.to_datetime(
+            dataframe[
+                self.time_column
+            ],
             dayfirst=True,
             errors="coerce",
         )
 
         dataframe = dataframe.dropna(
-            subset=[self.time_column]
+            subset=[
+                self.time_column
+            ]
         )
 
-        dataframe[self.time_column] = dataframe[
+        dataframe[
             self.time_column
-        ].map(self.normalize_timestamp)
+        ] = dataframe[
+            self.time_column
+        ].map(
+            self.normalize_timestamp
+        )
 
         dataframe = (
             dataframe
-            .sort_values(self.time_column)
+            .sort_values(
+                self.time_column
+            )
             .drop_duplicates(
-                subset=[self.time_column],
+                subset=[
+                    self.time_column
+                ],
                 keep="last",
             )
-            .reset_index(drop=True)
+            .reset_index(
+                drop=True
+            )
         )
 
         if self.flags_column not in dataframe.columns:
-            dataframe[self.flags_column] = np.nan
 
-        configured_columns = self.get_ip21_columns()
+            dataframe[
+                self.flags_column
+            ] = np.nan
+
+        configured_columns = (
+            self.get_ip21_columns()
+        )
+
         numeric_columns = []
 
         for column in configured_columns:
@@ -289,7 +378,10 @@ class IP21RecoveryManager:
             )
 
             if dataframe[column].notna().any():
-                numeric_columns.append(column)
+
+                numeric_columns.append(
+                    column
+                )
 
         logger.info(
             "[IP21] Retrieved %d historical rows.",
@@ -332,7 +424,10 @@ class IP21RecoveryManager:
         target_datetime,
     ):
 
-        if dataframe is None or dataframe.empty:
+        if (
+            dataframe is None
+            or dataframe.empty
+        ):
 
             logger.warning(
                 "[IP21] ORIGINAL STATE: 0/24 timestamps."
@@ -346,7 +441,9 @@ class IP21RecoveryManager:
             )
 
         target_rows = dataframe[
-            dataframe[self.time_column].dt.date
+            dataframe[
+                self.time_column
+            ].dt.date
             == target_datetime.date()
         ]
 
@@ -357,11 +454,14 @@ class IP21RecoveryManager:
         ].dropna():
 
             existing_hours.add(
-                self.normalize_timestamp(timestamp).hour
+                self.normalize_timestamp(
+                    timestamp
+                ).hour
             )
 
         missing_hours = sorted(
-            set(range(24)) - existing_hours
+            set(range(24))
+            - existing_hours
         )
 
         if len(existing_hours) == 24:
@@ -411,9 +511,14 @@ class IP21RecoveryManager:
     # PROCESS COLUMNS
     # ============================================================
 
-    def _get_process_columns(self, dataframe):
+    def _get_process_columns(
+        self,
+        dataframe,
+    ):
 
-        configured_columns = self.get_ip21_columns()
+        configured_columns = (
+            self.get_ip21_columns()
+        )
 
         process_columns = []
 
@@ -441,7 +546,10 @@ class IP21RecoveryManager:
             )
 
             if dataframe[column].notna().any():
-                process_columns.append(column)
+
+                process_columns.append(
+                    column
+                )
 
         if not process_columns:
 
@@ -466,16 +574,424 @@ class IP21RecoveryManager:
         timestamp,
     ):
 
-        timestamp = self.normalize_timestamp(timestamp)
+        timestamp = self.normalize_timestamp(
+            timestamp
+        )
 
         matches = dataframe.index[
-            dataframe[self.time_column] == timestamp
+            dataframe[
+                self.time_column
+            ] == timestamp
         ].tolist()
 
         if not matches:
+
             return None
 
         return matches[0]
+
+    # ============================================================
+    # IP21 DATABASE TABLE
+    # ============================================================
+
+    def _get_ip21_table_name(
+        self,
+        target_datetime,
+    ):
+        """
+        Return the actual monthly IP21 table name.
+
+        Example:
+            26/11/2025
+            -> ip21_2025_Nov
+        """
+
+        from src.utils.core_utility_functions import (
+            month_short_name,
+        )
+
+        month = month_short_name()[
+            target_datetime.month - 1
+        ]
+
+        return (
+            f"ip21_{target_datetime.year}_"
+            f"{month}"
+        )
+
+    # ============================================================
+    # PREPARE ROWS FOR DATABASE
+    # ============================================================
+
+    def _prepare_database_rows(
+        self,
+        dataframe,
+        target_timestamps,
+    ):
+        """
+        Convert the recovered target-date DataFrame
+        into tuples suitable for DatabaseManager
+        synchronize_save_ip21().
+
+        Important:
+
+        - The Time column is converted to the same
+          DD-MM-YYYY HH:MM representation used by the
+          IP21 database.
+        - The in-memory Flag column is NOT written into
+          the IP21 source table.
+        - pandas NaN/NaT values are converted to None.
+        - Column order follows TABLE_COLUMNS['ip21_data'].
+        """
+
+        database_columns = (
+            self.get_ip21_columns()
+        )
+
+        rows = []
+
+        target_set = {
+            self.normalize_timestamp(
+                timestamp
+            )
+            for timestamp in target_timestamps
+        }
+
+        target_dataframe = dataframe[
+            dataframe[
+                self.time_column
+            ].isin(target_set)
+        ].copy()
+
+        target_dataframe = (
+            target_dataframe
+            .sort_values(
+                self.time_column
+            )
+            .reset_index(
+                drop=True
+            )
+        )
+
+        if target_dataframe.empty:
+
+            raise RuntimeError(
+                "No target-date IP21 rows were "
+                "available for database synchronization."
+            )
+
+        for _, row in target_dataframe.iterrows():
+
+            values = []
+
+            for column in database_columns:
+
+                value = row.get(
+                    column,
+                    None,
+                )
+
+                if column == self.time_column:
+
+                    if pd.isna(value):
+
+                        values.append(None)
+
+                    else:
+
+                        timestamp = (
+                            self.normalize_timestamp(
+                                value
+                            )
+                        )
+
+                        values.append(
+                            timestamp.strftime(
+                                "%d-%m-%Y %H:%M"
+                            )
+                        )
+
+                    continue
+
+                if pd.isna(value):
+
+                    values.append(None)
+
+                else:
+
+                    values.append(value)
+
+            rows.append(
+                tuple(values)
+            )
+
+        return rows
+
+    # ============================================================
+    # SAVE RECOVERED TARGET DATA TO IP21 DATABASE
+    # ============================================================
+
+    def _save_recovered_target_data(
+        self,
+        dataframe,
+        target_datetime,
+        target_timestamps,
+    ):
+        """
+        Persist the recovered target-date IP21 data
+        into the actual IP21 monthly database table.
+
+        Existing target timestamps are UPDATED.
+
+        Missing target timestamps are INSERTED.
+
+        Historical source data is not modified.
+
+        This method uses the existing
+        DatabaseManager.synchronize_save_ip21()
+        method, which is specifically designed to:
+
+            - update existing timestamps
+            - insert new timestamps
+            - never delete rows
+            - commit the synchronization
+        """
+
+        if dataframe is None:
+
+            raise ValueError(
+                "Cannot save IP21 data because "
+                "dataframe is None."
+            )
+
+        if not target_timestamps:
+
+            raise ValueError(
+                "No target timestamps were supplied "
+                "for IP21 database synchronization."
+            )
+
+        table_name = (
+            self._get_ip21_table_name(
+                target_datetime
+            )
+        )
+
+        database_rows = (
+            self._prepare_database_rows(
+                dataframe=dataframe,
+                target_timestamps=target_timestamps,
+            )
+        )
+
+        if len(database_rows) != 24:
+
+            raise RuntimeError(
+                "IP21 database synchronization requires "
+                f"24 target rows, but prepared "
+                f"{len(database_rows)} rows."
+            )
+
+        logger.warning(
+            "[IP21] Saving recovered target-date data "
+            "to database | Table=%s | Rows=%d",
+            table_name,
+            len(database_rows),
+        )
+
+        try:
+
+            result = (
+                self.db_manager
+                .synchronize_save_ip21(
+                    self.DB_NAME,
+                    self.time_column,
+                    table_name,
+                    database_rows,
+                )
+            )
+
+        except Exception:
+
+            logger.exception(
+                "[IP21] Database synchronization "
+                "raised an exception | Table=%s",
+                table_name,
+            )
+
+            raise
+
+        if not result:
+
+            raise RuntimeError(
+                "IP21 database synchronization failed. "
+                f"Table={table_name}"
+            )
+
+        logger.warning(
+            "[IP21] Database recovery synchronization "
+            "completed | Table=%s | Rows processed=%d",
+            table_name,
+            len(database_rows),
+        )
+
+        return True
+
+    # ============================================================
+    # VERIFY DATABASE PERSISTENCE
+    # ============================================================
+
+    def _verify_recovered_target_data(
+        self,
+        target_datetime,
+        process_columns,
+    ):
+        """
+        Read the target date again from the actual database
+        after synchronization.
+
+        This is deliberately done after saving so that Sentinel
+        does not silently continue if the recovered target rows
+        were not actually persisted.
+        """
+
+        logger.info(
+            "[IP21] Verifying recovered target-date data "
+            "in database | Date=%s",
+            target_datetime.strftime(
+                "%d/%m/%Y"
+            ),
+        )
+
+        saved_dataframe = (
+            self._read_ip21_day(
+                target_datetime
+            )
+        )
+
+        if (
+            saved_dataframe is None
+            or saved_dataframe.empty
+        ):
+
+            raise RuntimeError(
+                "IP21 database verification failed: "
+                "no target-date data could be read back."
+            )
+
+        if self.time_column not in saved_dataframe.columns:
+
+            raise RuntimeError(
+                "IP21 database verification failed: "
+                f"'{self.time_column}' column was not returned."
+            )
+
+        saved_dataframe[
+            self.time_column
+        ] = pd.to_datetime(
+            saved_dataframe[
+                self.time_column
+            ],
+            dayfirst=True,
+            errors="coerce",
+        )
+
+        saved_dataframe = saved_dataframe.dropna(
+            subset=[
+                self.time_column
+            ]
+        )
+
+        saved_dataframe[
+            self.time_column
+        ] = saved_dataframe[
+            self.time_column
+        ].map(
+            self.normalize_timestamp
+        )
+
+        target_rows = saved_dataframe[
+            saved_dataframe[
+                self.time_column
+            ].dt.date
+            == target_datetime.date()
+        ]
+
+        if len(target_rows) != 24:
+
+            raise RuntimeError(
+                "IP21 database verification failed. "
+                f"Expected 24 rows for "
+                f"{target_datetime:%d/%m/%Y}, "
+                f"but database returned "
+                f"{len(target_rows)} rows."
+            )
+
+        unresolved = []
+
+        for timestamp in [
+            target_datetime
+            + timedelta(hours=hour)
+            for hour in range(24)
+        ]:
+
+            matching = target_rows[
+                target_rows[
+                    self.time_column
+                ] == timestamp
+            ]
+
+            if matching.empty:
+
+                unresolved.append(
+                    f"{timestamp:%d-%m-%Y %H:%M} / "
+                    "MISSING TIMESTAMP"
+                )
+
+                continue
+
+            row = matching.iloc[0]
+
+            for column in process_columns:
+
+                if column not in row.index:
+
+                    unresolved.append(
+                        f"{timestamp:%d-%m-%Y %H:%M} / "
+                        f"{column} / COLUMN NOT FOUND"
+                    )
+
+                    continue
+
+                value = row[column]
+
+                if not self._is_valid_number(
+                    value
+                ):
+
+                    unresolved.append(
+                        f"{timestamp:%d-%m-%Y %H:%M} / "
+                        f"{column}"
+                    )
+
+        if unresolved:
+
+            raise RuntimeError(
+                "IP21 database verification found "
+                "unresolved target values: "
+                f"{unresolved[:10]}"
+            )
+
+        logger.info(
+            "[IP21] DATABASE VERIFICATION PASSED | "
+            "Date=%s | Rows=%d",
+            target_datetime.strftime(
+                "%d/%m/%Y"
+            ),
+            len(target_rows),
+        )
+
+        return True
 
     # ============================================================
     # TARGET PREPARATION
@@ -486,6 +1002,22 @@ class IP21RecoveryManager:
         dataframe,
         target_datetime,
     ):
+        """
+        Prepare and recover the complete target date.
+
+        Existing valid values are preserved.
+
+        Missing target timestamps are created.
+
+        Missing target process values are recovered using
+        the EXISTING MissingDataHandler 720-hour method.
+
+        After recovery, the complete target date is written
+        back to the IP21 database.
+
+        The recovered target date is then read back from the
+        database and verified.
+        """
 
         if dataframe is None:
 
@@ -495,51 +1027,92 @@ class IP21RecoveryManager:
 
         dataframe = dataframe.copy()
 
-        dataframe[self.time_column] = pd.to_datetime(
-            dataframe[self.time_column],
+        # ========================================================
+        # NORMALIZE TIME COLUMN
+        # ========================================================
+
+        dataframe[
+            self.time_column
+        ] = pd.to_datetime(
+            dataframe[
+                self.time_column
+            ],
             dayfirst=True,
             errors="coerce",
         )
 
         dataframe = dataframe.dropna(
-            subset=[self.time_column]
+            subset=[
+                self.time_column
+            ]
         )
 
-        dataframe[self.time_column] = dataframe[
+        dataframe[
             self.time_column
-        ].map(self.normalize_timestamp)
+        ] = dataframe[
+            self.time_column
+        ].map(
+            self.normalize_timestamp
+        )
 
         dataframe = (
             dataframe
-            .sort_values(self.time_column)
+            .sort_values(
+                self.time_column
+            )
             .drop_duplicates(
-                subset=[self.time_column],
+                subset=[
+                    self.time_column
+                ],
                 keep="last",
             )
-            .reset_index(drop=True)
+            .reset_index(
+                drop=True
+            )
         )
 
         if self.flags_column not in dataframe.columns:
-            dataframe[self.flags_column] = np.nan
 
-        process_columns = self._get_process_columns(
-            dataframe
+            dataframe[
+                self.flags_column
+            ] = np.nan
+
+        # ========================================================
+        # PROCESS COLUMNS
+        # ========================================================
+
+        process_columns = (
+            self._get_process_columns(
+                dataframe
+            )
         )
 
+        # ========================================================
+        # TARGET TIMESTAMPS
+        # ========================================================
+
         target_timestamps = [
-            target_datetime + timedelta(hours=hour)
+            target_datetime
+            + timedelta(hours=hour)
             for hour in range(24)
         ]
 
         existing_timestamps = set(
-            dataframe[self.time_column].tolist()
+            dataframe[
+                self.time_column
+            ].tolist()
         )
 
         created_count = 0
 
+        # ========================================================
+        # CREATE MISSING TARGET TIMESTAMPS
+        # ========================================================
+
         for timestamp in target_timestamps:
 
             if timestamp in existing_timestamps:
+
                 continue
 
             new_row = {
@@ -547,11 +1120,18 @@ class IP21RecoveryManager:
                 for column in dataframe.columns
             }
 
-            new_row[self.time_column] = timestamp
+            new_row[
+                self.time_column
+            ] = timestamp
 
-            dataframe.loc[len(dataframe)] = new_row
+            dataframe.loc[
+                len(dataframe)
+            ] = new_row
 
-            existing_timestamps.add(timestamp)
+            existing_timestamps.add(
+                timestamp
+            )
+
             created_count += 1
 
             logger.info(
@@ -566,15 +1146,28 @@ class IP21RecoveryManager:
                 created_count,
             )
 
+        # ========================================================
+        # SORT AFTER CREATING TARGET ROWS
+        # ========================================================
+
         dataframe = (
             dataframe
-            .sort_values(self.time_column)
-            .reset_index(drop=True)
+            .sort_values(
+                self.time_column
+            )
+            .reset_index(
+                drop=True
+            )
         )
+
+        # ========================================================
+        # RESET RECOVERY HISTORY
+        # ========================================================
 
         self.missing_data_handler.clear_history()
 
         filled_ip21_values = {}
+
         recovery_used = False
 
         # ========================================================
@@ -583,9 +1176,11 @@ class IP21RecoveryManager:
 
         for timestamp in target_timestamps:
 
-            target_row = self._find_timestamp_row(
-                dataframe,
-                timestamp,
+            target_row = (
+                self._find_timestamp_row(
+                    dataframe,
+                    timestamp,
+                )
             )
 
             if target_row is None:
@@ -602,9 +1197,14 @@ class IP21RecoveryManager:
                     column,
                 ]
 
+                # ------------------------------------------------
+                # Existing valid value
+                # ------------------------------------------------
+
                 if self._is_valid_number(
                     current_value
                 ):
+
                     continue
 
                 logger.info(
@@ -615,19 +1215,27 @@ class IP21RecoveryManager:
                     column,
                 )
 
+                # ------------------------------------------------
+                # EXISTING IP21 RECOVERY TECHNIQUE
+                # ------------------------------------------------
+
                 dataframe = (
                     self.missing_data_handler
                     .fill_missing_data(
                         dataframe=dataframe,
                         target_timestamp=timestamp,
-                        required_columns=[column],
+                        required_columns=[
+                            column
+                        ],
                         time_column=self.time_column,
                     )
                 )
 
-                target_row = self._find_timestamp_row(
-                    dataframe,
-                    timestamp,
+                target_row = (
+                    self._find_timestamp_row(
+                        dataframe,
+                        timestamp,
+                    )
                 )
 
                 if target_row is None:
@@ -651,8 +1259,10 @@ class IP21RecoveryManager:
                         f"{timestamp} / {column}."
                     )
 
-                timestamp_text = timestamp.strftime(
-                    "%d-%m-%Y %H:%M"
+                timestamp_text = (
+                    timestamp.strftime(
+                        "%d-%m-%Y %H:%M"
+                    )
                 )
 
                 filled_ip21_values.setdefault(
@@ -660,13 +1270,18 @@ class IP21RecoveryManager:
                     [],
                 )
 
-                if column not in filled_ip21_values[
-                    timestamp_text
-                ]:
+                if (
+                    column
+                    not in filled_ip21_values[
+                        timestamp_text
+                    ]
+                ):
 
                     filled_ip21_values[
                         timestamp_text
-                    ].append(column)
+                    ].append(
+                        column
+                    )
 
                 recovery_used = True
 
@@ -678,14 +1293,19 @@ class IP21RecoveryManager:
                     final_value,
                 )
 
+        # ========================================================
+        # INCLUDE DETAILS FROM MISSING DATA HANDLER
+        # ========================================================
+
         handler_filled_details = (
             self.missing_data_handler
             .get_filled_details()
         )
 
-        for timestamp_text, columns in (
-            handler_filled_details.items()
-        ):
+        for (
+            timestamp_text,
+            columns,
+        ) in handler_filled_details.items():
 
             filled_ip21_values.setdefault(
                 timestamp_text,
@@ -694,29 +1314,41 @@ class IP21RecoveryManager:
 
             for column in columns:
 
-                if column not in filled_ip21_values[
-                    timestamp_text
-                ]:
+                if (
+                    column
+                    not in filled_ip21_values[
+                        timestamp_text
+                    ]
+                ):
 
                     filled_ip21_values[
                         timestamp_text
-                    ].append(column)
+                    ].append(
+                        column
+                    )
 
         if handler_filled_details:
+
             recovery_used = True
 
         # ========================================================
-        # FINAL VALIDATION
+        # FINAL IN-MEMORY VALIDATION
         # ========================================================
 
         dataframe = (
             dataframe
-            .sort_values(self.time_column)
-            .reset_index(drop=True)
+            .sort_values(
+                self.time_column
+            )
+            .reset_index(
+                drop=True
+            )
         )
 
         final_target_rows = dataframe[
-            dataframe[self.time_column].isin(
+            dataframe[
+                self.time_column
+            ].isin(
                 target_timestamps
             )
         ]
@@ -724,8 +1356,8 @@ class IP21RecoveryManager:
         if len(final_target_rows) != 24:
 
             raise RuntimeError(
-                f"IP21 recovery failed. "
-                f"Expected 24 target rows but found "
+                "IP21 recovery failed. "
+                "Expected 24 target rows but found "
                 f"{len(final_target_rows)}."
             )
 
@@ -733,9 +1365,11 @@ class IP21RecoveryManager:
 
         for timestamp in target_timestamps:
 
-            row_index = self._find_timestamp_row(
-                dataframe,
-                timestamp,
+            row_index = (
+                self._find_timestamp_row(
+                    dataframe,
+                    timestamp,
+                )
             )
 
             if row_index is None:
@@ -754,7 +1388,9 @@ class IP21RecoveryManager:
                     column,
                 ]
 
-                if not self._is_valid_number(value):
+                if not self._is_valid_number(
+                    value
+                ):
 
                     unresolved.append(
                         f"{timestamp:%d-%m-%Y %H:%M} / "
@@ -767,6 +1403,10 @@ class IP21RecoveryManager:
                 "IP21 recovery completed with unresolved "
                 f"values: {unresolved[:10]}"
             )
+
+        # ========================================================
+        # RECOVERY STATUS
+        # ========================================================
 
         logger.info(
             "[IP21] FINAL TARGET DATE CHECK | "
@@ -783,11 +1423,36 @@ class IP21RecoveryManager:
                 filled_ip21_values,
             )
 
+            # ====================================================
+            # NEW IMPORTANT STEP
+            #
+            # SAVE RECOVERED TARGET DATE INTO ACTUAL IP21 DB
+            # ====================================================
+
+            self._save_recovered_target_data(
+                dataframe=dataframe,
+                target_datetime=target_datetime,
+                target_timestamps=target_timestamps,
+            )
+
+            # ====================================================
+            # VERIFY THAT SENTINEL CAN READ IT BACK
+            # ====================================================
+
+            self._verify_recovered_target_data(
+                target_datetime=target_datetime,
+                process_columns=process_columns,
+            )
+
         else:
 
             logger.info(
                 "[IP21] No IP21 recovery was required."
             )
+
+        # ========================================================
+        # RETURN RESULT
+        # ========================================================
 
         return IP21RecoveryResult(
             dataframe=dataframe,
@@ -800,14 +1465,24 @@ class IP21RecoveryManager:
     # ============================================================
 
     @staticmethod
-    def _is_valid_number(value):
+    def _is_valid_number(
+        value,
+    ):
 
         if value is None:
+
             return False
 
-        if isinstance(value, str):
+        if isinstance(
+            value,
+            str,
+        ):
 
-            cleaned = value.strip().lower()
+            cleaned = (
+                value
+                .strip()
+                .lower()
+            )
 
             if cleaned in {
                 "",
@@ -817,12 +1492,24 @@ class IP21RecoveryManager:
                 "na",
                 "n/a",
             }:
+
                 return False
 
         try:
-            number = float(value)
 
-        except (TypeError, ValueError):
+            number = float(
+                value
+            )
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+
             return False
 
-        return bool(np.isfinite(number))
+        return bool(
+            np.isfinite(
+                number
+            )
+        )
