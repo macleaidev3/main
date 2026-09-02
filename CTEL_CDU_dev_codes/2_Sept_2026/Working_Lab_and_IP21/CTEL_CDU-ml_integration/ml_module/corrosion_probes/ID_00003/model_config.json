@@ -1,0 +1,28 @@
+{
+    "model_type": "LSTM",
+    "input_size": 7,
+    "hidden_size": 32,
+    "num_layers": 2,
+    "dropout": 0.1,
+    "seq_len": 10,
+    "features": [
+        "Density",
+        "API",
+        "Sulphur",
+        "thickness_diff",
+        "rolling_mean",
+        "time_diff_hours",
+        "corrosion_rate"
+    ],
+    "target": "target",
+    "scalers": {
+        "feature_scaler": "StandardScaler",
+        "target_scaler": "StandardScaler",
+        "transform": "Yeo-Johnson"
+    },
+    "training": {
+        "epochs": 300,
+        "learning_rate": 0.001,
+        "loss_function": "MSELoss"
+    }
+}

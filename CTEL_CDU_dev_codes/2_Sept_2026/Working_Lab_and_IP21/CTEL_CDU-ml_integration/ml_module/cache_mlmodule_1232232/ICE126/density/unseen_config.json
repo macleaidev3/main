@@ -1,0 +1,15 @@
+{
+    "unseen_cases": [
+        "HE_126A_D_CASE_8_with_r_theta_phi.csv",
+        "HE_126A_D_CASE_9_with_r_theta_phi.csv",
+        "HE_126A_D_CASE_10_with_r_theta_phi.csv",
+        "HE_126A_D_CASE_11_with_r_theta_phi.csv",
+        "HE_126A_D_CASE_12_with_r_theta_phi.csv"
+    ],
+    "problematic_simulations": [],
+    "total_simulations": 52,
+    "training_simulations": 47,
+    "unseen_simulations": 5,
+    "n_unseen": 5,
+    "selection_method": "Manual top 5 selection based on previous results"
+}
