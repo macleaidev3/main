@@ -103,7 +103,7 @@ class CreateAllDB(QtCore.QObject):
                 for probe_id in probes_id_list:
                     for month in month_short_names:
                         # Flat naming: ut_00001_2026_Jan_contributor
-                        contributor_table = f"ut_{probe_id}_{year}_{month}_contributor"
+                        contributor_table = f"ut_{probe_id}_{year}_{month}_contributor" 
                         DB_MANAGER.create_table(self.target_db, table_name=contributor_table, columns=contributor_db_columns) ##coment out
                         # DB_MANAGER.drop_table(self.target_db, table_name=contributor_table)
 
@@ -129,7 +129,7 @@ class CreateAllDB(QtCore.QObject):
                                 db_name=self.target_db,
                                 table_name=thickness_table,
                                 column_name="Date",
-                                values=date_list
+                                values=date_list 
                             )
                 
 
