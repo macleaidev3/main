@@ -12,7 +12,7 @@ The following are the scenarios which can occur:
 
   >> _Situation-3:_ For the date whose “Cr/Thickness” we need to predict, the whole date along with its values is missing from the uploaded dataset. So in this case we do not have the 24 hours data for the certain date for which the integrated model in the Sentinel app will not be able to predict and will show pending status.
 
-# **Lap Report Scenarios:**
+# **Lab Report Scenarios:**
 
   >> _Situation-1:_ For the date whose “Cr/Thickness” we need to predict, all the data are available for the date in the uploaded dataset. So prediction will happen quickly.
 
