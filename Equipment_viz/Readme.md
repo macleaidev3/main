@@ -12,4 +12,6 @@ Inside the folders, we have stored the folders of 7 sections I have worked on. I
 
 4> **_Coordinates_extract_Red_Strip_Script_4.py_** :- We have used this script to extract the coordinates of X, Y, Z of the places where the RED STRIP has been marked in the equipment. These coordinates will be saved in an output file name like "Nozzle_1_Red_Strip.csv", "Nozzle_2_Red_Strip.csv", etc. 
 
-5> 
+5> **_Nozzle_csv_convert_Script_5.py_** :- We have used this script to convert the extracted X, Y, Z values for point number 4 to the values that matches our model's predicted csv files values. These conversion is saved in the output file name like "COnverted_Nozzle_1_Red_Strip.csv", "COnverted_Nozzle_2_Red_Strip.csv", etc.
+
+6
