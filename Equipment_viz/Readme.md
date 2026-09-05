@@ -8,4 +8,6 @@ Inside the folders, we have stored the folders of 7 sections I have worked on. I
 
 2> **_Red_strip_Script_2.py_**  :- We have used this script to mark the RED STRIP in the INLETs and OUTLETs of the equipment's. This script only marks the red strip, nothing else.
 
-3> **_Converting_STL_to_CSV_script_3.py_** :- We have used this script 
+3> **_Converting_STL_to_CSV_script_3.py_** :- We have used this script to extract the X, Y, Z coordinates of the equipment's from the whole STL file. 
+
+4> **_Coordinates_extract_Red_Strip_Script_4.py_** :- 
