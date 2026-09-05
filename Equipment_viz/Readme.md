@@ -1,4 +1,3 @@
-NONE of this vizualization files are useful. So do not use these codes at all. This folder will be deleted later.
+Folder contains the 3D visualizations of validation data for 5 test cases (at input and output). Here, we are basically checking the predicted "Corrosion Rate" in the Input and Output sections of the equipment. The predicted "Corrosion Rate" has been taken from the model's predicted data on 5 unseen data sets. 
 
-
-Only the file "3D_Viz_with_hover_coordinates.py" is useful as the code in this file gives the 3D vizualization and when we hover our mouse in the blue equipment the X,Y,Z coordinates are shown.
+In this folder use the files stored on the folder name "27_Aug_2026". All the files in the folder "27_Aug_2026" are completed.
