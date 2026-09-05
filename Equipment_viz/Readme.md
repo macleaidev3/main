@@ -1,6 +1,6 @@
 Folder contains the 3D visualizations of validation data for 5 test cases (at input and output). Here, we are basically checking the predicted "Corrosion Rate" in the Input and Output sections of the equipment. The predicted "Corrosion Rate" has been taken from the model's predicted data on 5 unseen data sets. 
 
-In this folder use the files stored on the folder name "27_Aug_2026". All the files in the folder "27_Aug_2026" are completed.
+In this folder use the files stored on the folder name **"27_Aug_2026".** All the files in the folder **"27_Aug_2026" are completed.**
 
 Inside the folders, we have stored the folders of 7 sections I have worked on. Inside those folder we have the python scripts to generate the 3D models with the corrosion rate. Each of the files details are given below:
 
@@ -19,4 +19,4 @@ Inside the folders, we have stored the folders of 7 sections I have worked on. I
 7> **_Corrosion_Rate_Strip_Script_7.py_** :- We at last have used this script to vizualized those predicted corrosion rate on those particular coordinates (from point 6) in a 3D visualization and saved the visualization in an .html file.
 
 
-All 
+All the scripts have serial numbers written to know which script to execute continuously.
