@@ -1,4 +1,4 @@
-In this folder consist of the date wise development process of my contribution to the Sentinel Application.
+In this folder consist of the date wise development process of my contribution to the Sentinel Application. Please use only the file from the folder name "5_Sept_2026_full_and_final_all_complete/CTEL_CDU-ml_integration". The file in the folder "5_Sept_2026_full_and_final_all_complete/CTEL_CDU-ml_integration" is the complete implementation of the required task.
 
 I have been working to build a process in the Sentinel App. where in the "Flag" column in the "Corrosion Probe" section a flag message is displayed in the red telling that in the uploaded dataset the date whose prediction is required is missing. We solved this problem by taking the previous 30 days data to fill in the gap of the date where values are missing. This technique has only be applied to the IP21 and Lab Report section of the app. 
 
@@ -31,5 +31,28 @@ After filling up the gaps the data will be given to the model for prediction and
 We can then refresh the IP21 and Lap Report pages to check the average values. The values will be written in the datasets loaded in that page.
 
 _-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+In this folder "5_Sept_2026_full_and_final_all_complete/CTEL_CDU-ml_integration" the files which I have worked on are :
+
+1> src -> ut_ml -> ut_thickness_contributor.py
+
+2> src -> ut_ml -> ut_contributore_database.py
+
+3> src -> ut_ml -> ut_ip21_recovery.py
+
+4> src -> utils -> missing_data_handler.py
+
+5> src -> utils -> year_month_table_combined -> light_column_frozen_table.py
+
+6> src -> utils -> year_month_table_combined -> column_frozen_table.py
+
+7> src -> server_manager -> operation_manager.py
+
+8> src-> utils -> lab_report_recovery.py
+
+9> src-> utils -> core_utility_functions.py
+
+10> src -> application_started -> ml_job.py
+
 
 
