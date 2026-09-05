@@ -6,19 +6,19 @@ The following are the scenarios which can occur:
 
 # **IP21 Scenarios**:
 
->> _Situation-1_: For the date whose “Cr/Thickness” we need to predict all the data are available for the date in the uploaded dataset. So prediction will happen quickly.
+  >> _Situation-1_: For the date whose “Cr/Thickness” we need to predict all the data are available for the date in the uploaded dataset. So prediction will happen quickly.
 
->> _Situation-2:_ For the date whose “Cr/Thickness” we need to predict, the date is present but only with few hours information (instead of 24 hours information). In this situation the recorded hours could be present in a consecutive way or might not be in a consecutive way. So in this case we do not have the full 24 hours data for the certain date for which the integrated model in the Sentinel app will not be able to predict and will show pending status.
+  >> _Situation-2:_ For the date whose “Cr/Thickness” we need to predict, the date is present but only with few hours information (instead of 24 hours information). In this situation the recorded hours could be present in a consecutive way or might not be in a consecutive way. So in this case we do not have the full 24 hours data for the certain date for which the integrated model in the Sentinel app will not be able to predict and will show pending status.
 
->> _Situation-3:_ For the date whose “Cr/Thickness” we need to predict, the whole date along with its values is missing from the uploaded dataset. So in this case we do not have the 24 hours data for the certain date for which the integrated model in the Sentinel app will not be able to predict and will show pending status.
+  >> _Situation-3:_ For the date whose “Cr/Thickness” we need to predict, the whole date along with its values is missing from the uploaded dataset. So in this case we do not have the 24 hours data for the certain date for which the integrated model in the Sentinel app will not be able to predict and will show pending status.
 
-**Lap Report Scenarios:**
+# **Lap Report Scenarios:**
 
->> _Situation-1:_ For the date whose “Cr/Thickness” we need to predict, all the data are available for the date in the uploaded dataset. So prediction will happen quickly.
+  >> _Situation-1:_ For the date whose “Cr/Thickness” we need to predict, all the data are available for the date in the uploaded dataset. So prediction will happen quickly.
 
->> _Situation-2:_ For the date whose “Cr/Thickness” we need to predict, the date is present but one column value is missing.  So in this case we do not have the full data for the certain date for which the integrated model in the Sentinel app will not be able to predict and will show pending status.
+  >> _Situation-2:_ For the date whose “Cr/Thickness” we need to predict, the date is present but one column value is missing.  So in this case we do not have the full data for the certain date for which the integrated model in the Sentinel app will not be able to predict and will show pending status.
 
->> _Situation-3:_ For the date whose “Cr/Thickness” we need to predict, the whole date along with its values is missing from the uploaded dataset. So in this case we do not the data for the certain date for which the integrated model in the Sentinel app will not be able to predict and will show pending status.
+  >> _Situation-3:_ For the date whose “Cr/Thickness” we need to predict, the whole date along with its values is missing from the uploaded dataset. So in this case we do not the data for the certain date for which the integrated model in the Sentinel app will not be able to predict and will show pending status.
 
 
 Therefore, to tackle these scenarios, what we have does is that we take the average of the previous 30 days to fill in these gaps and then the data is passed to the model for prediction. So, if by chance while calculating the average from the previous 30 days we found out one the date’s data is missing which is required to be filled to get the missing data of the certain date, we will fill up the date’s values first by taking the average of its previous 30 days. In this way we will fill up the missing gap of the target date whose prediction for “Cr/Thickness” we want to see.
