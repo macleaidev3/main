@@ -29,3 +29,7 @@ For Example:- I want to predict the “Cr/Thickness” for the date 5/9/2025, th
 After filling up the gaps the data will be given to the model for prediction and in the “Corrosion Probe” page we have a column name “Flag” and in this column in red colour a flag message will be displayed showing which sections data was missing along with the date and that the SENTINEL has used the 30 days averaging technique to fill up the required gap for the prediction.
  
 We can then refresh the IP21 and Lap Report pages to check the average values. The values will be written in the datasets loaded in that page.
+
+_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+
