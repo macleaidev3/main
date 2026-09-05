@@ -10,4 +10,6 @@ Inside the folders, we have stored the folders of 7 sections I have worked on. I
 
 3> **_Converting_STL_to_CSV_script_3.py_** :- We have used this script to extract the X, Y, Z coordinates of the equipment's from the whole STL file. 
 
-4> **_Coordinates_extract_Red_Strip_Script_4.py_** :- 
+4> **_Coordinates_extract_Red_Strip_Script_4.py_** :- We have used this script to extract the coordinates of X, Y, Z of the places where the RED STRIP has been marked in the equipment. These coordinates will be saved in an output file name like "Nozzle_1_Red_Strip.csv", "Nozzle_2_Red_Strip.csv", etc. 
+
+5> 
