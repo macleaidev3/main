@@ -9,7 +9,7 @@ The folder "14 Sept 2026" is the work completed main folder. Inside this folder 
 
 This script saves a .csv file in which we have saved the metric of the evaluation between the ORIGINAL IMAGES and the ESRGAN IMAGES. In the .csv file the column name "Quality Change (%)" is the column which is being treated as the final score percentage of the quality improvement between the images. This column shows how much the quality of the images has improved after processing the original images with the ESRGAN model. 
 
-
+Moreover, the script also generates a new folder by the name "Red Flag" inside which we have separately stored those images whose quality did not improve much. If the percentage values in the column "Quality Change (%)" is <=60% (less than equal to 60%) that ESRGAN image gets deleted from the "ESRGAN_Result" folder and is stored in the "Red Flag" folder. 
 
 
 
