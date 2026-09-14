@@ -3,7 +3,7 @@
 
 ## 1> "14 Sept 2026" :
 
-The folder "14 Sept 2026" is the work completed main folder. The work's serial number is "PRJ-0021/12" in the iid platform. Inside this folder we have 2 more folders named :- "Evaluation of Fundus Images" and "Real_ESRGAN".
+The folder "14 Sept 2026" is the work completed main folder. The work's serial number is **"_PRJ-0021/12_"** in the iid platform. Inside this folder we have 2 more folders named :- "Evaluation of Fundus Images" and "Real_ESRGAN".
 
 - Folder "Evaluation of Fundus Images" :- Inside this folder we have a python script named "Evaluating_ESRGAN_process_script.py" which is being used to evaluated the quality of the images between ORIGINAL IMAGES and ESRGAN IMAGES. In this script we have used a hybrid no-reference image-quality assessment (IQA) approach technique which is  based on Sharpness (Laplacian variance), Contrast (standard deviation), and Entropy, combined into a weighted relative quality score.
   
