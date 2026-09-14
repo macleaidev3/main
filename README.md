@@ -7,6 +7,8 @@ The folder "14 Sept 2026" is the work completed main folder. Inside this folder 
 
   > Folder "Evaluation of Fundus Images" :- Inside this folder we have a python script named "Evaluating_ESRGAN_process_script.py" which is being used to evaluated the quality of the images between ORIGINAL IMAGES and ESRGAN IMAGES. In this script we have used a hybrid no-reference image-quality assessment (IQA) approach technique which is  based on Sharpness (Laplacian variance), Contrast (standard deviation), and Entropy, combined into a weighted relative quality score.
 
+This script saves a .csv file in which we have saved the metric of the evaluation between the ORIGINAL IMAGES and the ESRGAN IMAGES. In the .csv file the column name "Quality Change (%)" is the column which is being treated as the final score percentage of the quality improvement between the images. This column shows how much the quality of the images has improved after processing the original images with the ESRGAN model. 
+
 
 
 
