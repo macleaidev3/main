@@ -28,3 +28,7 @@ The folder “24 Sept 2026” is the work completed main folder. The work’s se
 
   The used model is based on Convolutional Neural Network (CNN) architecture and is a multi-class fundus image classification model which classifies across - “Glaucoma” and “Normal”. This model was trained on a total of 2,230 images as per the author.
 
+
+## 3> _**"Do not use these code"**_ :
+
+We will delete the folder "_Do not use these code_"  along with the all the non useable folder except for the above 2 folders after discussing with Sir. Till then in this branch only use the above mentioned folders for the work. 
