@@ -28,6 +28,9 @@ The folder “24 Sept 2026” is the work completed main folder. The work’s se
 
   The used model is based on Convolutional Neural Network (CNN) architecture and is a multi-class fundus image classification model which classifies across - “Glaucoma” and “Normal”. This model was trained on a total of 2,230 images as per the author.
 
+- File “Performance of the model not integrated in GlaucoSense.pdf“ :-  This is the report pdf file in which i have written the report of both the models performance. I have compared both the models output with the current GlaucoSense AI results based on the same images. Even though both the models prediction result about “Glaucoma” is different from that of GlaucoSense, but I think the model of “glaucoma-detector-master ” is much closer to our scenario.
+
+
 
 ## 3> _**"Do not use these code"**_ :
 
