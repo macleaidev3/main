@@ -1,4 +1,4 @@
-This is the task from Serial Number **"_PRJ-0021/12_"**. Inside this folder there are 2 folders- "Evaluation of Fundus Images" and "Real_ESRGAN" : 
+This is the task from Serial Number **"_PRJ-0021/12_"** in iid. Inside this folder there are 2 folders- "Evaluation of Fundus Images" and "Real_ESRGAN" : 
 
 - Folder "Evaluation of Fundus Images" :- Inside this folder we have a python script named "Evaluating_ESRGAN_process_script.py" which is being used to evaluated the quality of the images between ORIGINAL IMAGES and ESRGAN IMAGES. In this script we have used a hybrid no-reference image-quality assessment (IQA) approach technique which is  based on Sharpness (Laplacian variance), Contrast (standard deviation), and Entropy, combined into a weighted relative quality score.
   
