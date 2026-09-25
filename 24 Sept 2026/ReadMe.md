@@ -40,7 +40,9 @@ Moreover, there is another file by the name “_my_model2.h5_  “ which is the 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-- **File “Performance of the model not integrated in GlaucoSense.pdf “** :-  This is the report pdf file in which i have written the report of both the models performance. I have compared both the models output with the current GlaucoSense AI results based on the same images. Even though both the models prediction result about “Glaucoma” is different from that of GlaucoSense, but I think the model of “glaucoma-detector-master ” is much closer to our scenario.
+- **File “Performance of the model not integrated in GlaucoSense.pdf “** :-  This is the report pdf file in which i have written the report of both the models performance. I have compared both the models output with the current GlaucoSense AI results based on the same images.
+
+  Even though both the models prediction result about “Glaucoma” is different from that of GlaucoSense, but I think the model of “glaucoma-detector-master ” is much closer to our scenario.
 
 
 _**Note**_ :- I was not able to validate the results of both the models as I could not find a file where the images actual classification are mentioned. So I am not assured if the models classifications are correct or not.
